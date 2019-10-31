@@ -93,7 +93,7 @@ signal regdst, branch, memread, memtoreg, memwrite, alusrc, regwrite, zflag, and
 signal aluop :std_logic_vector (2 downto 0);
 signal alucontrol : std_logic_vector (3 downto 0);
 signal a3 : std_logic_vector(4 downto 0); --de los registros.
-signal rd1, rd2, aluaux, alures, wd3, sigextend, sigextend_j,  suma4, PCSalida, sl2, sl2_j, muxpc, sumapc : std_logic_vector (31 downto 0);
+signal rd1, rd2, aluaux, alures, wd3, sigextend, sigextend_j,  suma4, PCSalida, sl2, sl2_j, muxpc, sumapc, rd1_mux, rd2_mux : std_logic_vector (31 downto 0);
 
 --para el registro 0
 signal suma4_IFID, instruccion_IFID : std_logic_vector(31 downto 0);
@@ -120,7 +120,7 @@ signal aluin_1, aluin_2 : std_logic_vector(31 downto 0);
 signal mux_registerrd, mux_registerrd_EXMEM, mux_registerrd_MEMWB: std_logic_vector(4 downto 0);
 
 -- Para rs, rt y rd en el caso _IDEX
-signal rs_IDEX, rt_IDEX, rd_IDEX : std_logic_vector(4 downto 0);
+signal rs_IDEX, rt_IDEX, rd_IDEX, rs_EXMEM, rd_EXMEM, rt_EXMEM : std_logic_vector(4 downto 0);
 
 begin 
 
@@ -244,15 +244,19 @@ process(Reset, Clk) begin
 		aluop_IDEX <= aluop;
 		suma4_IDEX <= suma4_IFID;
 		
-		rd1_IDEX <= rd1;
-		rd2_IDEX <= rd2;
+		rd1_IDEX <= rd1_mux;
+		rd2_IDEX <= rd2_mux;
 		
 		rs_IDEX <= instruccion_IFID(25 downto 21);
 		rt_IDEX <= instruccion_IFID(20 downto 16);
 		rd_IDEX <= instruccion_IFID(15 downto 11);
 		
+		rs_EXMEM <= rs_IDEX;
+		rt_EXMEM <= rt_IDEX;
+		rd_EXMEM <= rd_IDEX;
 		
-		muxwr0_IDEX <= instruccion_IFID (20 downto 16);
+		
+				muxwr0_IDEX <= instruccion_IFID (20 downto 16);
 		muxwr1_IDEX <= instruccion_IFID (15 downto 11);
 		
 		--Para el segundo registro
@@ -319,7 +323,10 @@ muxpc <= sumapc_EXMEM when and_s = '1' else
                   
 --multiplexores de la fowarding unity
 aluin_1 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rs_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rs_IDEX) else rd1_IDEX;
-aluin_2 <= wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rt_IDEX) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rt_IDEX) else rd2_IDEX;
+aluin_2 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rt_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rt_IDEX) else rd2_IDEX;
+
+rd1_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(25 downto 21)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(25 downto 21)) else rd1;
+rd2_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(20 downto 16)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else rd2;
 
 mux_registerrd <= rt_IDEX when alucontrol = "000" or alucontrol = "001" or alucontrol = "010" or alucontrol = "011" else instruccion_IFID(15 downto 11);
 
