@@ -116,11 +116,13 @@ signal rd_MEMWB, alures_MEMWB : std_logic_vector(31 downto 0);
 signal a3_MEMWB: std_logic_vector(4 downto 0);
 
 --Para los multiplexores de la forwarding unity
-signal aluin_1, aluin_2 : std_logic_vector(31 downto 0);
+signal aluin_1, aluin_2, instruccion_IDEX : std_logic_vector(31 downto 0);
 signal mux_registerrd, mux_registerrd_EXMEM, mux_registerrd_MEMWB: std_logic_vector(4 downto 0);
 
 -- Para rs, rt y rd en el caso _IDEX
 signal rs_IDEX, rt_IDEX, rd_IDEX, rs_EXMEM, rd_EXMEM, rt_EXMEM : std_logic_vector(4 downto 0);
+
+signal aux : std_logic;
 
 begin 
 
@@ -173,6 +175,8 @@ process(Reset, Clk) begin
 		DAddr 	   <= X"00000000";
 		DDataOut   <= X"00000000";
 		IAddr      <= X"00000000";
+
+		aux <= '0';
 		--registro 0
 		suma4_IFID   <= X"00000000";
 		instruccion_IFID <= X"00000000";
@@ -218,23 +222,34 @@ process(Reset, Clk) begin
     
 	elsif rising_edge(Clk) then --Tenemos en cuenta el nop
 		
-		DWrEn      <= memwrite_EXMEM;
-		DRdEn	   <= memread_EXMEM;
-		DAddr 	   <= alures_EXMEM;
-		DDataOut   <= rd2_EXMEM;
-		IAddr      <= muxpc;
-		--registro 0
-	  	suma4_IFID   <= suma4;
 		
-		--registro1. Tenemos en cuenta el caso de las instrucciones lw
-		if (instruccion_IFID(25 downto 21) = rt_IDEX or instruccion_IFID(20 downto 26) = rt_IDEX) and memwrite_IDEX = '1' then
-			regwrite_IDEX <= '0';
-			memwrite_IDEX <= '0';
+		
+		
+		--registro1. Tenemos en cuenta el caso de las instrucciones lw y despues leer de un registro. En ese caso introducimos un nop
+		if memtoreg_IDEX = '1' and regwrite = '1' and (rt_IDEX = instruccion_IFID(25 downto 21) or rt_IDEX = instruccion_IFID(20 downto 16)) then
+
+			aux <= '1';
 		else
 			regwrite_IDEX <= regwrite;
 			memwrite_IDEX <= memwrite;
 			PCSalida <= muxpc;
-			instruccion_IFID <= IDataIn;
+			
+			IAddr      <= muxpc;
+			--registro 0
+	  		suma4_IFID   <= suma4;
+			DWrEn      <= memwrite_EXMEM;
+			DRdEn	   <= memread_EXMEM;
+			DAddr 	   <= alures_EXMEM;
+			DDataOut   <= rd2_EXMEM;
+			instruccion_IDEX <= instruccion_IFID;
+		if IDataIn = X"00000000" then
+		instruccion_IFID <= X"11111111";
+		else
+		instruccion_IFID <= IDataIn;
+	    	end if;
+
+		
+
 		end if;
 		memtoreg_IDEX <= memtoreg;
 		branch_IDEX <= branch;
@@ -256,7 +271,7 @@ process(Reset, Clk) begin
 		rd_EXMEM <= rd_IDEX;
 		
 		
-				muxwr0_IDEX <= instruccion_IFID (20 downto 16);
+		muxwr0_IDEX <= instruccion_IFID (20 downto 16);
 		muxwr1_IDEX <= instruccion_IFID (15 downto 11);
 		
 		--Para el segundo registro
@@ -284,10 +299,6 @@ process(Reset, Clk) begin
     	
     	mux_registerrd_MEMWB <= mux_registerrd_EXMEM;
 
-		if IDataIn = X"00000000" then
-			instruccion_IFID <= X"11111111";
-			
-	    	end if;
 		if instruccion_IFID = X"11111111" then
 			sigextend_IDEX <= X"00000000";
 		else
@@ -321,14 +332,17 @@ wd3 <= DDataIn when memtoreg_MEMWB = '1' else alures_MEMWB;
 muxpc <= sumapc_EXMEM when and_s = '1' else
                   sl2_j when cond_j = '1' else suma4;
                   
---multiplexores de la fowarding unity
+--Multiplexores encargados de los riesgos registro a registro
 aluin_1 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rs_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rs_IDEX) else rd1_IDEX;
+-----------------------------------------------
+---------FALLO EN ALUIN"-----------------------
+-----------------------------------------------
 aluin_2 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rt_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rt_IDEX) else rd2_IDEX;
+--Multiplexores encargados de los riesgos registro a memoria
+rd1_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(25 downto 21)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(25 downto 21))  else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(25 downto 21)) else rd1;
+rd2_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(20 downto 16)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(20 downto 16)) else rd2;
 
-rd1_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(25 downto 21)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(25 downto 21)) else rd1;
-rd2_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(20 downto 16)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else rd2;
-
-mux_registerrd <= rt_IDEX when alucontrol = "000" or alucontrol = "001" or alucontrol = "010" or alucontrol = "011" else instruccion_IFID(15 downto 11);
+mux_registerrd <= instruccion_IFID(25 downto 21) when alucontrol = "000" or alucontrol = "001" or alucontrol = "010" or alucontrol = "011" else instruccion_IFID(15 downto 11);
 
 --cosas que calculo
 suma4 <= PCSalida + 4; --Al ciclo se le suma 4 a la instrucción
