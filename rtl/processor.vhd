@@ -33,14 +33,14 @@ architecture rtl of processor is
 component reg_bank
     port (
 	Clk   : in std_logic; -- Reloj activo en flanco de subida
-      	Reset : in std_logic; -- Reset asíncrono a nivel alto
-      	A1    : in std_logic_vector(4 downto 0);   -- Dirección para el puerto Rd1
+      	Reset : in std_logic; -- Reset asÃ­ncrono a nivel alto
+      	A1    : in std_logic_vector(4 downto 0);   -- DirecciÃ³n para el puerto Rd1
       	Rd1   : out std_logic_vector(31 downto 0); -- Dato del puerto Rd1
-      	A2    : in std_logic_vector(4 downto 0);   -- Dirección para el puerto Rd2
+      	A2    : in std_logic_vector(4 downto 0);   -- DirecciÃ³n para el puerto Rd2
       	Rd2   : out std_logic_vector(31 downto 0); -- Dato del puerto Rd2
-      	A3    : in std_logic_vector(4 downto 0);   -- Dirección para el puerto Wd3
+      	A3    : in std_logic_vector(4 downto 0);   -- DirecciÃ³n para el puerto Wd3
       	Wd3   : in std_logic_vector(31 downto 0);  -- Dato de entrada Wd3
-      	We3   : in std_logic -- Habilitación de la escritura de Wd3
+      	We3   : in std_logic -- HabilitaciÃ³n de la escritura de Wd3
 	); 
 end component;
 
@@ -88,7 +88,7 @@ end component;
 
 --Fin de instanciacion de componentes
 
---declaracion de señales
+--declaracion de seÃ±ales
 signal regdst, branch, memread, memtoreg, memwrite, alusrc, regwrite, zflag, and_s, cond_j : std_logic;
 signal aluop :std_logic_vector (2 downto 0);
 signal alucontrol : std_logic_vector (3 downto 0);
@@ -98,7 +98,7 @@ signal rd1, rd2, aluaux, alures, wd3, sigextend, sigextend_j,  suma4, PCSalida, 
 --para el registro 0
 signal suma4_IFID, instruccion_IFID : std_logic_vector(31 downto 0);
 
---Para el primer registro todas las señales
+--Para el primer registro todas las seÃ±ales
 signal regwrite_IDEX, memtoreg_IDEX, branch_IDEX, memread_IDEX, memwrite_IDEX, regdst_IDEX, alusrc_IDEX : std_logic;
 signal aluop_IDEX: std_logic_vector(2 downto 0);
 signal suma4_IDEX, rd1_IDEX, rd2_IDEX, sigextend_IDEX: std_logic_vector(31 downto 0);
@@ -131,18 +131,18 @@ u1: reg_bank port map(
 	Clk   => Clk,
  	Reset => Reset,
   	A1    => instruccion_IFID(25 downto 21),
-  	Rd1   => rd1, --señal
+  	Rd1   => rd1, --seÃ±al
   	A2    => instruccion_IFID (20 downto 16),
-  	Rd2   => rd2, --señal
-  	A3    => a3_MEMWB, --señal (mux)
-	Wd3   => wd3, --señal (mux)
- 	We3   => regwrite_MEMWB --señal
+  	Rd2   => rd2, --seÃ±al
+  	A3    => a3_MEMWB, --seÃ±al (mux)
+	Wd3   => wd3, --seÃ±al (mux)
+ 	We3   => regwrite_MEMWB --seÃ±al
 );
 
 --portmap de la alu
 u2: alu port map(
 	OpA     => aluin_1, --antes era rd1_IDEX
-  	OpB     => aluaux, --señal (mux)
+  	OpB     => aluaux, --seÃ±al (mux)
 	Control => alucontrol,
   	Result  => alures,
   	ZFlag   => zflag
@@ -343,19 +343,18 @@ aluin_1 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXME
 -----------------------------------------------
 aluin_2 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rt_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rt_IDEX) else rd2_IDEX;
 --Multiplexores encargados de los riesgos registro a memoria
-rd1_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(25 downto 21)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(25 downto 21))  else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(25 downto 21)) else rd1;
-rd2_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(20 downto 16)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(20 downto 16)) else rd2;
-
+rd1_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(25 downto 21)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(25 downto 21))  else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(25 downto 21) and memtoreg_MEMWB = '0') else rd1;
+rd2_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(20 downto 16)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(20 downto 16) and memtoreg_MEMWB = '0') else rd2;
 mux_registerrd <= instruccion_IFID(25 downto 21) when alucontrol = "000" or alucontrol = "001" or alucontrol = "010" or alucontrol = "011" else instruccion_IFID(15 downto 11);
 
---Para el lw (apartado 3 del 1) hay que seguir este condicional y poner todas las señales de control de EX/MEM/WB a 0 para NOP
+--Para el lw (apartado 3 del 1) hay que seguir este condicional y poner todas las seÃ±ales de control de EX/MEM/WB a 0 para NOP
 process(memread_IDEX, rt_IDEX, instruccion_IFID)
 begin
 	if (memread_IDEX = '1' and ((rt_IDEX = instruccion_IFID(25 downto 21)) or (rt_IDEX = instruccion_IFID(20 downto 16))) then
-		--cuales son las señales/nombres que hay que poner a 0?
+		--cuales son las seÃ±ales/nombres que hay que poner a 0?
 
 --cosas que calculo
-suma4 <= PCSalida + 4; --Al ciclo se le suma 4 a la instrucción
+suma4 <= PCSalida + 4; --Al ciclo se le suma 4 a la instrucciÃ³n
 sumapc <= sl2 + suma4_IDEX;
  
 end architecture;
