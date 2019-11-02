@@ -180,6 +180,10 @@ process(Reset, Clk) begin
 		--registro 0
 		suma4_IFID   <= X"00000000";
 		instruccion_IFID <= X"00000000";
+
+		--Faltaba del reset
+		instruccion_IDEX <= X"00000000";
+
 		--registro1
 		regwrite_IDEX <= '0';
 		memtoreg_IDEX <= '0';
@@ -212,6 +216,9 @@ process(Reset, Clk) begin
    		regwrite_EXMEM <= '0';
    		memtoreg_EXMEM <= '0';
    		rd2_EXMEM <= X"00000000";
+
+		--Faltaba del reset
+		
     
   		--Para el tercer registro
   		regwrite_MEMWB <= '0';
@@ -332,7 +339,7 @@ muxpc <= sumapc_EXMEM when and_s = '1' else
 --Multiplexores encargados de los riesgos registro a registro
 aluin_1 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rs_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rs_IDEX) else rd1_IDEX;
 -----------------------------------------------
----------FALLO EN ALUIN"-----------------------
+---------FALLO EN ALUIN"-------------------------//FALTA UNA CONDICION PARA EL CASO ESPECIAL DE VECTORES
 -----------------------------------------------
 aluin_2 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rt_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rt_IDEX) else rd2_IDEX;
 --Multiplexores encargados de los riesgos registro a memoria
@@ -340,6 +347,12 @@ rd1_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFI
 rd2_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(20 downto 16)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(20 downto 16)) else rd2;
 
 mux_registerrd <= instruccion_IFID(25 downto 21) when alucontrol = "000" or alucontrol = "001" or alucontrol = "010" or alucontrol = "011" else instruccion_IFID(15 downto 11);
+
+--Para el lw (apartado 3 del 1) hay que seguir este condicional y poner todas las señales de control de EX/MEM/WB a 0 para NOP
+process(memread_IDEX, rt_IDEX, instruccion_IFID)
+begin
+	if (memread_IDEX = '1' and ((rt_IDEX = instruccion_IFID(25 downto 21)) or (rt_IDEX = instruccion_IFID(20 downto 16))) then
+		--cuales son las señales/nombres que hay que poner a 0?
 
 --cosas que calculo
 suma4 <= PCSalida + 4; --Al ciclo se le suma 4 a la instrucción
