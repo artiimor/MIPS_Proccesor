@@ -232,22 +232,19 @@ process(Reset, Clk) begin
 		--registro1. Tenemos en cuenta el caso de las instrucciones lw y despues leer de un registro. En ese caso introducimos un nop
 		if memtoreg_IDEX = '1' and regwrite = '1' and (rt_IDEX = instruccion_IFID(25 downto 21) or rt_IDEX = instruccion_IFID(20 downto 16)) then
 			regwrite_IDEX <= '0';
-
+			aux <= '1';
 		elsif memread_IDEX = '1' and (rt_IDEX = instruccion_IFID(25 downto 21) or rt_IDEX = instruccion_IFID(20 downto 16)) then
-			aluop_IDEX <= "000";
-			branch_EXMEM <= '0';
-			memtoreg_MEMWB <= '0';
-			memwrite_EXMEM <= '0';
-			memread_EXMEM <= '1';
-			alusrc_IDEX <= '0';
-			regwrite_MEMWB <= '0';
-			regdst_IDEX <= '0';
+			
+			regwrite_IDEX <= '0';
+			aux <= '1';
+			DAddr 	   <= alures;
+			DRdEn	   <= memread_IDEX;
 			
 		else
 			regwrite_IDEX <= regwrite;
 			memwrite_IDEX <= memwrite;
 			PCSalida <= muxpc;
-			
+			aux <= '0';
 			IAddr      <= muxpc;
 			--registro 0
 	  		suma4_IFID   <= suma4;
@@ -276,6 +273,7 @@ process(Reset, Clk) begin
 		rd1_IDEX <= rd1_mux;
 		rd2_IDEX <= rd2_mux;
 		
+		
 		rs_IDEX <= instruccion_IFID(25 downto 21);
 		rt_IDEX <= instruccion_IFID(20 downto 16);
 		rd_IDEX <= instruccion_IFID(15 downto 11);
@@ -302,6 +300,7 @@ process(Reset, Clk) begin
 		
 		
 		rd2_EXMEM <= rd2_IDEX;
+		
 
 		mux_registerrd_EXMEM <= mux_registerrd;
 		
@@ -349,14 +348,12 @@ muxpc <= sumapc_EXMEM when and_s = '1' else
                   sl2_j when cond_j = '1' else suma4;
                   
 --Multiplexores encargados de los riesgos registro a registro
-aluin_1 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rs_IDEX and memtoreg_MEMWB = '0') else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rs_IDEX) else rd1_IDEX;
-aluin_2 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rt_IDEX and memtoreg_MEMWB = '0') else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rt_IDEX) else rd2_IDEX;
+aluin_1 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rs_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rs_IDEX) else rd1_IDEX;
+aluin_2 <= alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rt_IDEX) else wd3 when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = rt_IDEX) else rd2_IDEX;
 --Multiplexores encargados de los riesgos registro a memoria
 rd1_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(25 downto 21)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(25 downto 21))  else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(25 downto 21) and memtoreg_MEMWB = '0') else rd1;
-rd2_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(20 downto 16)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(20 downto 16) and memtoreg_MEMWB = '0') else rd2;
+rd2_mux <= alures when (regwrite_IDEX = '1' and a3 /= 0 and a3 = instruccion_IFID(20 downto 16))else DDataIn when (regwrite_EXMEM = '1' and memwrite = '1' and memtoreg_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else alures_EXMEM when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = instruccion_IFID(20 downto 16)) else alures_MEMWB when (regwrite_MEMWB = '1' and a3_MEMWB /= 0 and a3_MEMWB = instruccion_IFID(20 downto 16) and memtoreg_MEMWB = '0') else rd2;
 --Multiplexor encargado de que podamos guardar en memoria un registro al mismo tiempo que lo escribimos
-
-aux <= '1' when (regwrite_EXMEM = '1' and a3_EXMEM /= 0 and a3_EXMEM = rt_IDEX) else '0';
 
 mux_registerrd <= instruccion_IFID(25 downto 21) when alucontrol = "000" or alucontrol = "001" or alucontrol = "010" or alucontrol = "011" else instruccion_IFID(15 downto 11);
 
