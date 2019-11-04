@@ -242,63 +242,60 @@ process(Reset, Clk) begin
 			
 		--Cuando confirmamos que hay salto pasamos hacia atras los valores de los registros del segmentado
 		elsif and_s = '1' then
-			memtoreg <= memtoreg_IDEX;
-			branch <= branch_IDEX;
-			memread <= memread_IDEX;
-			regdst <= regdst_IDEX;
-			alusrc <= alusrc_IDEX;
-			aluop <= aluop_IDEX;
-			suma4_IFID <= suma4_IDEX;
+		 DWrEn      <= '0';
+		DRdEn	   <= '0';
+		DAddr 	   <= X"00000000";
+		DDataOut   <= X"00000000";
+		IAddr      <= X"00000000";
+			--registro 0
+		instruccion_IFID <= X"00000000";
+		--registro1
+		regwrite_IDEX <= '0';
+		memtoreg_IDEX <= '0';
+		branch_IDEX <= '0';
+		memread_IDEX <= '0';
+		memwrite_IDEX <= '0';
+		regdst_IDEX <= '0';
+		alusrc_IDEX <= '0';
+		aluop_IDEX <= "000";
+		suma4_IDEX <= X"00000000";
+		instruccion_IDEX <= X"00000000";
 		
-			rd1_mux <= rd1_IDEX;
-			rd2_mux <= rd2_IDEX;
+		rd1_IDEX <= X"00000000";
+		rd2_IDEX <= X"00000000";
+		sigextend_IDEX <= X"00000000";
 		
+		muxwr0_IDEX <= "00000";
+		muxwr1_IDEX <= "00000";
+		rs_IDEX <= "00000";
+		rt_IDEX <= "00000";
+		rd_IDEX <= "00000";
 		
-			instruccion_IFID(25 downto 21) <= rs_IDEX;
-			instruccion_IFID(20 downto 16) <= rt_IDEX;
-			instruccion_IFID(15 downto 11) <= rd_IDEX;
-		
-			rs_IDEX <= rs_EXMEM;
-			rt_IDEX <= rt_EXMEM;
-			rd_IDEX <= rd_EXMEM;
-		
-		
-			instruccion_IFID (20 downto 16) <= muxwr0_IDEX;
-			instruccion_IFID (15 downto 11) <= muxwr1_IDEX;
-		
-			--Para el segundo registro
-    		branch_IDEX <= branch_EXMEM;
-    		memread_IDEX <= memread_EXMEM;
-    		memwrite_IDEX <= memwrite_EXMEM;
-    		memtoreg_IDEX <= memtoreg_EXMEM;
-    		regwrite_IDEX <= regwrite_EXMEM;
-    		zflag <= zflag_EXMEM;
-    
-    		alures <= alures_EXMEM;
-    		sumapc <= sumapc_EXMEM;
-    		a3 <= a3_EXMEM;
-		
-		
-			rd2_IDEX <= rd2_EXMEM;
-		
+		--Para el segundo registro
+    		branch_EXMEM <= '0';
+    		memread_EXMEM <= '0';
+    		memwrite_EXMEM <= '0';
+    		zflag_EXMEM <= '0';
+   		alures_EXMEM <= X"00000000";
+   		sumapc_EXMEM <= X"00000000";
+   		a3_EXMEM <= "00000";
+   		regwrite_EXMEM <= '0';
+   		memtoreg_EXMEM <= '0';
+   		rd2_EXMEM <= X"00000000";
+		mux_registerrd_EXMEM <= "00000";
 
-			mux_registerrd <= mux_registerrd_EXMEM;
-		
+		rs_EXMEM <= "00000";
+		rt_EXMEM <= "00000";
+		rd_EXMEM <= "00000";
     
-    		--Para el tercer registro
-    		regwrite_EXMEM <= regwrite_MEMWB;
-    		memtoreg_EXMEM <= memtoreg_MEMWB;
-    		DDataIn <= rd_MEMWB;
-    		alures_EXMEM <= alures_MEMWB;
-    		a3_EXMEM <= a3_MEMWB;
-    	
-    		mux_registerrd_EXMEM <= mux_registerrd_MEMWB;
-
-			if instruccion_IFID = X"11111111" then
-				sigextend_IDEX <= X"00000000";
-			else
-				sigextend_IDEX <= sigextend;
-			end if;
+  		--Para el tercer registro
+  		regwrite_MEMWB <= '0';
+ 		memtoreg_MEMWB <= '0';
+  		rd_MEMWB <= X"00000000";
+  		alures_MEMWB <= X"00000000";
+  		a3_MEMWB <= "00000";
+		mux_registerrd_MEMWB <= "00000";
+		
 			
 		else
 			regwrite_IDEX <= regwrite;
@@ -353,7 +350,7 @@ process(Reset, Clk) begin
     		memtoreg_EXMEM <= memtoreg_IDEX;
     		regwrite_EXMEM <= regwrite_IDEX;
     		zflag_EXMEM <= zflag;
-    
+      
     		alures_EXMEM <= alures;
     		sumapc_EXMEM <= sumapc;
     		a3_EXMEM <= a3;
@@ -371,7 +368,7 @@ process(Reset, Clk) begin
     		rd_MEMWB <= DDataIn;
     		alures_MEMWB <= alures_EXMEM;
     		a3_MEMWB <= a3_EXMEM;
-    	
+    	 
     		mux_registerrd_MEMWB <= mux_registerrd_EXMEM;
 
 		if instruccion_IFID = X"11111111" then
