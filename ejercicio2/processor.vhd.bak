@@ -250,7 +250,6 @@ process(Reset, Clk) begin
 		IAddr      <= X"00000000";
 			--registro 0
 		IAddr      <= muxpc;
-		PCSalida <= muxpc;
 		instruccion_IFID <= X"00000000";
 		--registro1
 		regwrite_IDEX <= '0';
